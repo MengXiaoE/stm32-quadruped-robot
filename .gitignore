@@ -1,0 +1,42 @@
+# Keil/uVision generated output
+Objects/
+Listings/
+DebugConfig/
+*.axf
+*.hex
+*.bin
+*.map
+*.lst
+*.crf
+*.o
+*.d
+*.dep
+*.htm
+*.lnp
+*.sct
+
+# Local IDE/user state and machine-specific project files
+Project.uvoptx
+Project.uvguix.*
+*.dbgconf
+
+# Files intentionally excluded from this clean release
+firmware/Keil/Hardware/OLED.c
+firmware/Keil/Hardware/OLED.h
+firmware/Keil/Hardware/OLED_Data.c
+firmware/Keil/Hardware/OLED_Data.h
+firmware/Keil/Hardware/PWM4.c
+firmware/Keil/Hardware/PWM4.h
+firmware/Keil/Start/startup_stm32f10x_cl.s
+firmware/Keil/Start/startup_stm32f10x_hd.s
+firmware/Keil/Start/startup_stm32f10x_hd_vl.s
+firmware/Keil/Start/startup_stm32f10x_ld.s
+firmware/Keil/Start/startup_stm32f10x_ld_vl.s
+firmware/Keil/Start/startup_stm32f10x_md_vl.s
+firmware/Keil/Start/startup_stm32f10x_xl.s
+
+# Third-party application; not part of this repository
+*.apk
+
+# Internal continuation note; never publish it
+HANDOFF.md
