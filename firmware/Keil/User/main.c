@@ -98,8 +98,8 @@ const float    RIGHT_LIFT        = 30.0f;   // 右转 抬腿幅度(度)
  *  二、什么是"一个 tick（节拍）"？
  *      主循环最后有一句 Delay_ms(25)，所以正常情况下主循环约 25ms
  *      转一圈。我们把"转一圈"叫做一个 tick。
- *      代码里所有 *_DelayCnt 都在数 tick，例如 FORWARD_DELAY_TIME = 5
- *      表示"数满 5 个 tick（约 125ms）才换下一步"。
+ *      代码里所有 *_DelayCnt 都在数 tick，例如 FORWARD_DELAY_TIME = 4
+ *      表示"数满 4 个 tick（约 100ms）才换下一步"。
  *
  *  三、主循环每圈固定做 6 件事（顺序很重要）
  *      ① 输出：把 Angle1~Angle9 刷成 PWM，驱动 9 个舵机
@@ -119,7 +119,7 @@ const float    RIGHT_LIFT        = 30.0f;   // 右转 抬腿幅度(度)
  *
  *  五、"非阻塞"是什么意思？
  *      新手写法常常是"舵机转 90°，然后 Delay_ms(500) 干等"。这样整机
- *      500ms 内什么都干不了。本程序改成：每 25ms 只转 12°，转 5 次
+ *      500ms 内什么都干不了。本程序改成：每 25ms 只转 15°，转 4 次
  *      自然到位。等待期间主循环照样能收蓝牙指令、闪灯、看传感器。
  *      真正会卡住主循环的只有 WS2812 灯效（内部有 1~2s 的阻塞延时），
  *      所以那条分支特意先把串口标志清掉再执行，防止丢指令。
@@ -205,7 +205,7 @@ volatile uint8_t Forward_Step = 0;
  *    类型: uint16_t, 单位: 主循环 tick (1 tick = 25ms)
  *    含义: 每一步(4 步一周期)持续多少 tick; 越小越快。
  *    范围: 建议 4~10; < 4 时 MG90 跟不上会丢步、抽舵机。
- *    经验值: 6=600ms周期(稳)、5=500ms周期(快, 当前)、4=400ms周期(极限)。
+ *    经验值: 6=600ms周期(稳)、5=500ms周期(快)、4=400ms周期(极限, 当前)。
  *
  * ② FORWARD_STEP_DELTA  —— 单 tick 角度增量
  *    类型: float, 单位: 度/tick
@@ -213,13 +213,14 @@ volatile uint8_t Forward_Step = 0;
  *          FORWARD_STEP_DELTA × FORWARD_DELAY_TIME ≥ 60
  *          (60° = 胯前位↔后位差), 否则一步走不完整个推程。
  *    范围: 6.0 ~ 15.0; > 15 接近 MG90 极限 (15°/25ms), 会卡顿。
- *    经验值: DELAY=6→DELTA=10、DELAY=5→DELTA=12 (当前)、DELAY=4→DELTA=15。
+ *    经验值: DELAY=6→DELTA=10、DELAY=5→DELTA=12、DELAY=4→DELTA=15 (当前)。
  *
  * ③ FORWARD_LIFT  —— 抬腿幅度(小腿离地高度)
  *    类型: float, 单位: 度
  *    含义: 摆动相小腿从直立位(A5/A7=0、A6/A8=180)抬起多少度。
  *    范围: 20 ~ 60; 过小→擦地, 过大→重心起伏剧烈、整机点头。
  *    经验值: 45 (抗擦地+不晃的折中点)。地面光滑可降到 30。
+ *    当前: 50 (比 45 略抬高, 更不容易擦地, 但机身起伏会稍大一点)。
  *
  * ④ FORWARD_LEFT_TRIM  —— 左侧推程修正
  *    类型: float, 单位: 度
@@ -235,9 +236,9 @@ volatile uint8_t Forward_Step = 0;
  *    范围: -8 ~ +8。同 ④ 用法, 一般 ④ 和 ⑤ 只调一个就够。
  *    经验值: 0 起步。
  * ============================================================ */
-const uint16_t FORWARD_DELAY_TIME  = 5;       // ① 节拍数 (5×25ms = 125ms/步, 500ms/周期)
-const float    FORWARD_STEP_DELTA  = 12.0f;   // ② 度/tick (12×5 = 60° 刚好走完推程)
-const float    FORWARD_LIFT        = 45.0f;   // ③ 抬腿幅度
+const uint16_t FORWARD_DELAY_TIME  = 4;       // ① 节拍数 (4×25ms = 100ms/步, 400ms/周期)
+const float    FORWARD_STEP_DELTA  = 15.0f;   // ② 度/tick (15×4 = 60° 刚好走完推程)
+const float    FORWARD_LIFT        = 50.0f;   // ③ 抬腿幅度 (45→50, 抬得更离地)
 const float    FORWARD_LEFT_TRIM   = 5.0f;    // ④ ★ 当前生效: +3° 修正"机身稍稍右偏" ★
 const float    FORWARD_RIGHT_TRIM  = 0.0f;    // ⑤ 右侧修正 (未启用)
 
@@ -429,7 +430,7 @@ void Huadong_Smooth(void)
  *  为什么需要它？
  *  舵机不是"设一个角度就瞬间到"，直接让 100° 跳到 165° 会造成
  *  电流猛增 → 电池电压被拉低 → 单片机复位 / 舵机抽搐。
- *  拆成每拍 12° 的小步，机械和电源都吃得消。
+ *  拆成每拍十几度的小步，机械和电源都吃得消。
  *
  *  参数用 volatile float *（指针）而不是返回值，是为了直接修改
  *  main.c 里的全局角度变量 AngleX。
@@ -794,19 +795,19 @@ int main(void)
          *  都是"状态机 + 插值"。以【前进】为例：
          *
          *      每圈：Forward_DelayCnt++
-         *              ↓ 数够 FORWARD_DELAY_TIME(=5) 个 tick 了吗？
+         *              ↓ 数够 FORWARD_DELAY_TIME(=4) 个 tick 了吗？
          *          是 → Forward_Step 切下一步（1→2→3→4→1 循环），
          *               计数器归零
          *          否 → 步数不变
          *              ↓
          *      每圈：对 8 个角度各调用一次 InterpolateTo()，
-         *            朝"当前这一步的目标角度"最多挪 12°。
+         *            朝"当前这一步的目标角度"最多挪 15°。
          *
          *  一句话分工：
          *      Step 决定"去哪"  —— 查 Forward_Targets 表，4 个离散姿势
          *      InterpolateTo 决定"怎么去" —— 每拍挪一点，舵机不瞬移
          *
-         *  ▼ 前进一个完整周期 = 4 步 × 5 tick × 25ms = 500ms：
+         *  ▼ 前进一个完整周期 = 4 步 × 4 tick × 25ms = 400ms：
          *
          *   第1步  腿1(右前)+腿4(左后) 落地在前位，      ┐ 起始姿势
          *          腿2(左前)+腿3(右后) 抬起在后位       ┘
